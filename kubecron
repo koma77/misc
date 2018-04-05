@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+
+import requests
+import time
+import subprocess
+import json
+import argparse
+
+
+GET_CRONJOB_JSON = "kubectl -n {ns} get cronjob {job} -o json"
+CREATE_JOB = "kubectl -n {ns} create -f -"
+
+def _exec(cmd, stdin=None):
+    p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return p.communicate(stdin)
+
+def cronrun(ns=None, job=None):
+    ts = str(int(time.time()))
+    stdout, stderr = _exec(GET_CRONJOB_JSON.format(ns=ns, job=job))
+
+    if stderr:
+      return stderr
+
+    # Empty template
+    job = json.loads('{ "apiVersion": "batch/v1", "kind": "Job", "metadata": { "name": "somename" }, "spec": {} }')
+
+    cj_name  = json.loads(stdout)['metadata']['name']
+    spec  = json.loads(stdout)['spec']['jobTemplate']['spec']
+
+    job['metadata']['name'] = "{}-{}".format(cj_name,ts)
+    job['spec'] = spec
+
+    job_json=json.dumps(job)
+    stdout, stderr = _exec(CREATE_JOB.format(ns=ns), job_json)
+
+    return stdout, stderr
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--namespace', default='net')
+    parser.add_argument("job")
+    args = parser.parse_args()
+
+    stdout, stderr = cronrun(args.namespace, args.job)
+    if not stderr:
+      print stdout
+    else:
+      print stderr
+
+if __name__ == '__main__':
+    main()
+
