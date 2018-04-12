@@ -24,6 +24,7 @@ def cronrun(ns=None, job=None):
     # Empty template
     job = json.loads('{ "apiVersion": "batch/v1", "kind": "Job", "metadata": { "name": "somename" }, "spec": {} }')
 
+    # job is a part of cronjob under spec key
     cj_name  = json.loads(stdout)['metadata']['name']
     spec  = json.loads(stdout)['spec']['jobTemplate']['spec']
 
