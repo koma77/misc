@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Release.Name }}
+  name: {{ .Release.Name }}
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: {{ if .Values.targetPort }} {{ .Values.targetPort }} {{ else }} 8080 {{ end }}
+  selector:
+    app: {{ .Release.Name }}

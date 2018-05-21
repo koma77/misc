@@ -1,0 +1,23 @@
+image: koma77/nginx-echo-delay
+tag: latest
+imagePullPolicy: Always
+annotations: []
+hosts:
+  - echo
+domain: n.xx
+nodeselector: com
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 100m
+    memory: 256Mi
+readinessProbe:
+  httpGet:
+    path: /
+    port: 8080
+    scheme: HTTP
+  initialDelaySeconds: 5
+  timeoutSeconds: 3
+

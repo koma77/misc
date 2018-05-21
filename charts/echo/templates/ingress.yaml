@@ -1,0 +1,40 @@
+{{- $serviceName := .Release.Name -}}
+{{- $val := .Values -}}
+{{- $hosts := .Values.hosts -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}
+  annotations: {{ range $key, $value := .Values.annotations }}
+    {{ $key }}: {{ $value | quote }} {{ end }}
+    {{- if .Values.configuration_snippet }}
+    ingress.kubernetes.io/configuration-snippet: |
+      {{- range .Values.configuration_snippet }}
+      {{ . }} 
+      {{- end }} {{- end }}
+    #ingress.kubernetes.io/service-upstream: {{ default "true" $val.service_upstream | quote }}
+    {{- if .Values.rewrite_target }}
+    ingress.kubernetes.io/rewrite-target: {{ .Values.rewrite_target }} {{ end }}
+    ingress.kubernetes.io/force-ssl-redirect: "false"
+spec:
+  tls:
+  - hosts:
+    {{- range $host := .Values.hosts }}
+    {{- if eq $host $val.domain}}
+    - {{ $host }} {{ else }}
+    - {{ $host }}.{{ $val.domain }}
+    {{- end }}
+    {{- end }}
+    secretName: com-tls-secret
+  rules:
+    {{- range $host := .Values.hosts }}
+    {{- if eq $host $val.domain }}
+    - host: {{ $host }} {{ else }}
+    - host: {{ $host }}.{{ $val.domain }} {{ end }}
+      http:
+        paths:
+        - path: {{ default "/" $val.path }}
+          backend:
+            serviceName: {{ $serviceName }}
+            servicePort: 8080
+{{ end }}
